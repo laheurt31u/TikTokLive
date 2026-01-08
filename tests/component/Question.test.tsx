@@ -92,8 +92,14 @@ test.describe('Question Component', () => {
     // THEN: Timer commence à 5
     await expect(component.locator('[data-testid="timer-display"]')).toHaveText('5');
 
-    // AND: Timer décompte (vérification après 2 secondes)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // AND: Timer décompte - attente explicite du changement
+    await component.waitForFunction((element) => {
+      const timerElement = element.querySelector('[data-testid="timer-display"]');
+      if (!timerElement) return false;
+      const timerValue = parseInt(timerElement.textContent || '0');
+      return timerValue < 5 && timerValue >= 1; // Vérifier que le timer a changé
+    }, { timeout: 5000 });
+    
     const timerText = await component.locator('[data-testid="timer-display"]').textContent();
     const timerValue = parseInt(timerText || '0');
     expect(timerValue).toBeLessThanOrEqual(3); // Entre 1 et 3
@@ -114,9 +120,9 @@ test.describe('Question Component', () => {
     // WHEN: Montage du composant et attente de l'expiration
     const component = await mount(<Question {...questionData} />);
 
-    // THEN: Événement d'expiration émis
+    // THEN: Événement d'expiration émis - attente explicite de l'état d'expiration
     // Note: Nécessiterait un mock ou un système d'événements pour tester complètement
-    await new Promise(resolve => setTimeout(resolve, 1100));
+    await expect(component.locator('[data-testid="question-expired"]')).toBeVisible({ timeout: 5000 });
 
     // Vérifier que le composant indique l'expiration
     await expect(component.locator('[data-testid="question-expired"]')).toBeVisible();

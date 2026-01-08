@@ -7,6 +7,7 @@ import { test, expect } from '@playwright/test';
 import { waitForElement, waitForText } from '../support/helpers/wait-for';
 import { assertWinnerDisplayed, assertQuestionDisplayed, assertCommentMetrics } from '../support/helpers/assertions';
 import { createQuizComments, createCorrectAnswerComment } from '../support/factories/comment.factory';
+import { TEST_TIMEOUTS } from '../support/constants/timeouts';
 
 test.describe('Détection des Réponses au Quiz', () => {
   test('[P0] devrait détecter la première réponse correcte et afficher le gagnant', async ({ page }) => {
@@ -21,18 +22,22 @@ test.describe('Détection des Réponses au Quiz', () => {
     const comments = createQuizComments('Paris', 8, 0.25); // 8 commentaires, 25% corrects
 
     // Simuler l'arrivée des commentaires via WebSocket ou API
+    // Pattern explicite: Configurer l'attente AVANT de déclencher les événements
+    // pour éviter les race conditions
+    const correctAnswerPromise = page.waitForFunction(() => {
+      return document.querySelector('[data-testid="correct-answer-detected"]') !== null;
+    }, { timeout: TEST_TIMEOUTS.NETWORK_RESPONSE });
+
+    // Déclencher les événements après avoir configuré l'attente
     for (const comment of comments) {
       await page.evaluate((comment) => {
         // Simulation d'événement WebSocket
         window.dispatchEvent(new CustomEvent('tiktok-comment', { detail: comment }));
       }, comment);
-
-      // Petit délai pour simuler le temps réel
-      await page.waitForTimeout(100);
     }
 
-    // THEN: Le système détecte la première réponse correcte
-    await expect(page.locator('[data-testid="correct-answer-detected"]')).toBeVisible();
+    // THEN: Le système détecte la première réponse correcte - attente explicite
+    await correctAnswerPromise;
 
     // AND: Le gagnant est identifié et affiché
     const firstCorrectComment = comments.find(c => c.text === 'Paris');
@@ -84,23 +89,54 @@ test.describe('Détection des Réponses au Quiz', () => {
     await assertWinnerDisplayed(page, 'user_lowercase');
   });
 
-  test('[P0] devrait détecter les réponses avec fautes de frappe mineures', async ({ page }) => {
-    // GIVEN: Une question posée
+  test('[P0] devrait rejeter les réponses avec fautes de frappe si fuzzy matching est désactivé', async ({ page }) => {
+    // GIVEN: Une question posée avec fuzzy matching désactivé (comportement par défaut)
     await page.goto('/quiz');
     await assertQuestionDisplayed(page, 'Quelle est la capitale de la France ?');
 
-    // WHEN: Un utilisateur fait une faute mineure "Prais"
+    // WHEN: Un utilisateur fait une faute mineure "Prais" (au lieu de "Paris")
     const typoAnswer = createCorrectAnswerComment('Prais', { username: 'user_typo' });
     await page.evaluate((comment) => {
       window.dispatchEvent(new CustomEvent('tiktok-comment', { detail: comment }));
     }, typoAnswer);
 
-    // THEN: Si la logique de fuzzy matching est activée, la réponse est acceptée
-    // (Comportement dépend de l'implémentation - à adapter selon les règles métier)
-    const winnerDisplayed = await page.locator('[data-testid="winner-username"]').isVisible();
-    if (winnerDisplayed) {
-      await expect(page.locator('[data-testid="winner-username"]')).toHaveText('user_typo');
-    }
+    // THEN: La réponse est rejetée car fuzzy matching n'est pas activé
+    // Assertion explicite : aucun winner ne devrait être affiché
+    await expect(page.locator('[data-testid="winner-username"]')).not.toBeVisible({ timeout: TEST_TIMEOUTS.ELEMENT_VISIBILITY });
+  });
+
+  // Note: Test pour fuzzy matching activé - à implémenter quand la fonctionnalité sera disponible
+  // Pour l'instant, le comportement par défaut (fuzzy matching désactivé) est testé ci-dessus
+  test.skip('[P1] devrait accepter les réponses avec fautes de frappe si fuzzy matching est activé', async ({ page }) => {
+    // GIVEN: Une question posée avec fuzzy matching activé
+    // Note: Ce test nécessite que la fonctionnalité de fuzzy matching soit implémentée et activable
+    await page.goto('/quiz');
+    await assertQuestionDisplayed(page, 'Quelle est la capitale de la France ?');
+
+    // Activer fuzzy matching si disponible (via paramètre ou configuration)
+    await page.evaluate(() => {
+      // Simuler activation du fuzzy matching si l'API existe
+      if (window.localStorage) {
+        window.localStorage.setItem('fuzzyMatchingEnabled', 'true');
+      }
+    });
+
+    // WHEN: Un utilisateur fait une faute mineure "Prais" (au lieu de "Paris")
+    const typoAnswer = createCorrectAnswerComment('Prais', { username: 'user_typo' });
+    
+    // Attendre explicitement que le winner soit détecté si fuzzy matching est actif
+    const winnerPromise = page.waitForFunction(() => {
+      const winnerElement = document.querySelector('[data-testid="winner-username"]');
+      return winnerElement !== null && winnerElement.textContent === 'user_typo';
+    }, { timeout: TEST_TIMEOUTS.ELEMENT_VISIBILITY });
+
+    await page.evaluate((comment) => {
+      window.dispatchEvent(new CustomEvent('tiktok-comment', { detail: comment }));
+    }, typoAnswer);
+
+    // THEN: Si fuzzy matching est activé et implémenté, la réponse est acceptée
+    await winnerPromise;
+    await expect(page.locator('[data-testid="winner-username"]')).toHaveText('user_typo');
   });
 
   test('[P0] devrait afficher les métriques de participation en temps réel', async ({ page }) => {
@@ -111,14 +147,20 @@ test.describe('Détection des Réponses au Quiz', () => {
     // WHEN: Plusieurs commentaires arrivent
     const comments = createQuizComments('Paris', 15, 0.4); // 15 commentaires, 40% corrects
 
+    // Attendre explicitement que les métriques soient mises à jour
+    const metricsPromise = page.waitForFunction(() => {
+      const countElement = document.querySelector('[data-testid="correct-answers-count"]');
+      return countElement !== null && countElement.textContent === '6';
+    }, { timeout: TEST_TIMEOUTS.METRICS_UPDATE });
+
     for (const comment of comments) {
       await page.evaluate((comment) => {
         window.dispatchEvent(new CustomEvent('tiktok-comment', { detail: comment }));
       }, comment);
-      await page.waitForTimeout(50);
     }
 
-    // THEN: Les métriques de participation sont mises à jour
+    // THEN: Les métriques de participation sont mises à jour - attente explicite
+    await metricsPromise;
     await assertCommentMetrics(page, 15, { checkRate: true });
 
     // AND: Le nombre de bonnes réponses est affiché
@@ -139,14 +181,20 @@ test.describe('Détection des Réponses au Quiz', () => {
       createCorrectAnswerComment('Rome', { userId, username: 'sameuser', text: 'Rome' })
     ];
 
+    // Attendre explicitement que le gagnant soit identifié
+    const winnerPromise = page.waitForFunction(() => {
+      const winnerElement = document.querySelector('[data-testid="winner-username"]');
+      return winnerElement !== null && winnerElement.textContent === 'sameuser';
+    }, { timeout: TEST_TIMEOUTS.NETWORK_RESPONSE });
+
     for (const answer of answers) {
       await page.evaluate((comment) => {
         window.dispatchEvent(new CustomEvent('tiktok-comment', { detail: comment }));
       }, answer);
-      await page.waitForTimeout(100);
     }
 
-    // THEN: Seule la première réponse de l'utilisateur est considérée
+    // THEN: Seule la première réponse de l'utilisateur est considérée - attente explicite
+    await winnerPromise;
     await expect(page.locator('[data-testid="winner-username"]')).toHaveText('sameuser');
 
     // AND: Les réponses suivantes du même utilisateur sont ignorées

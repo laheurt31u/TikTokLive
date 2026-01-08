@@ -3,8 +3,8 @@
  * Tests isolés pour la logique de parsing des commentaires
  */
 
-import { TikTokCommentParser } from '../../../tiktoklive/lib/tiktok/parser';
-import { TikTokComment } from '../../../tiktoklive/lib/tiktok/types';
+import { TikTokCommentParser } from '../../tiktoklive/lib/tiktok/parser';
+import { TikTokComment } from '../../tiktoklive/lib/tiktok/types';
 
 describe('TikTokCommentParser', () => {
   describe('parseAndValidateComment', () => {

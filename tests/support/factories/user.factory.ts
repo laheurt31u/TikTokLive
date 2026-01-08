@@ -58,8 +58,8 @@ export const deleteUser = async (userId: string): Promise<void> => {
   // Dans un vrai système:
   // await fetch(`/api/users/${userId}`, { method: 'DELETE' });
 
-  // Pour les tests, on simule juste un délai
-  await new Promise(resolve => setTimeout(resolve, 10));
+  // Pour les tests, pas besoin de délai artificiel - retour immédiat
+  return Promise.resolve();
 };
 
 /**

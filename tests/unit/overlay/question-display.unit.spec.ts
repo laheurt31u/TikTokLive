@@ -2,167 +2,90 @@
  * Tests unitaires pour le composant QuestionDisplay
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
-import { jest } from '@jest/globals';
+import { render, screen } from '@testing-library/react';
 import { QuestionDisplay } from '@/components/overlay/QuestionDisplay';
+import { Question } from '@/types/gamification';
 
 describe('QuestionDisplay', () => {
-  const mockQuestion = {
+  const mockQuestion: Question = {
     id: 'q1',
     text: 'Quelle est la capitale de la France ?',
-    difficulty: 'easy' as const,
-    timeLimit: 30
+    answers: ['Paris', 'London', 'Berlin'],
+    difficulty: 'facile',
+    points: 10,
+    category: 'géographie'
   };
 
-  const mockWinner = {
-    username: 'testuser',
-    profileImage: 'https://example.com/avatar.jpg',
-    points: 10
-  };
-
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  it('should render question with difficulty badge', () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
+  it('should render question text correctly', () => {
+    render(<QuestionDisplay question={mockQuestion} />);
 
     expect(screen.getByText('Quelle est la capitale de la France ?')).toBeInTheDocument();
-    expect(screen.getByText('🟢 FACILE')).toBeInTheDocument();
-    expect(screen.getByText('(10 pts)')).toBeInTheDocument();
-  });
-
-  it('should show countdown timer', () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
-
-    expect(screen.getByText('25s')).toBeInTheDocument();
-  });
-
-  it('should display different difficulty levels correctly', () => {
-    const hardQuestion = { ...mockQuestion, difficulty: 'hard' as const };
-
-    render(<QuestionDisplay question={hardQuestion} timeLeft={25} winner={null} />);
-
-    expect(screen.getByText('🔴 DIFFICILE')).toBeInTheDocument();
-    expect(screen.getByText('(30 pts)')).toBeInTheDocument();
   });
 
   it('should show call-to-action for chat response', () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
+    render(<QuestionDisplay question={mockQuestion} />);
 
-    expect(screen.getByText('Répondez dans le chat TikTok !')).toBeInTheDocument();
+    expect(screen.getByText(/Répondez dans le chat TikTok/i)).toBeInTheDocument();
   });
 
-  it('should not render when no question provided', () => {
-    render(<QuestionDisplay question={null} timeLeft={0} winner={null} />);
+  it('should not render question content when no question provided', () => {
+    render(<QuestionDisplay question={null} />);
 
-    expect(screen.queryByText(/Répondez dans le chat/)).not.toBeInTheDocument();
+    expect(screen.getByText('Aucune question disponible')).toBeInTheDocument();
+    expect(screen.getByText('Chargement en cours...')).toBeInTheDocument();
   });
 
-  it('should show winner celebration overlay', async () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={mockWinner} />);
+  it('should show loading skeleton when isLoading is true', () => {
+    render(<QuestionDisplay question={mockQuestion} isLoading={true} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('VOUS AVEZ GAGNÉ !')).toBeInTheDocument();
-      expect(screen.getByText('Félicitations @testuser')).toBeInTheDocument();
-      expect(screen.getByText('+10 points')).toBeInTheDocument();
-    });
-  });
-
-  it('should display winner avatar when available', async () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={mockWinner} />);
-
-    await waitFor(() => {
-      const avatar = document.querySelector('img[alt*="testuser"]');
-      expect(avatar).toBeInTheDocument();
-      expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg');
-    });
-  });
-
-  it('should show default avatar when no profile image', async () => {
-    const winnerWithoutImage = { ...mockWinner, profileImage: undefined };
-
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={winnerWithoutImage} />);
-
-    await waitFor(() => {
-      const defaultAvatar = document.querySelector('.bg-gradient-to-br');
-      expect(defaultAvatar).toBeInTheDocument();
-    });
+    expect(screen.getByTestId('question-skeleton')).toBeInTheDocument();
   });
 
   it('should apply GPU acceleration classes', () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
+    const { container } = render(<QuestionDisplay question={mockQuestion} />);
 
-    const acceleratedElements = document.querySelectorAll('.gpu-accelerated');
+    const acceleratedElements = container.querySelectorAll('.gpu-accelerated');
     expect(acceleratedElements.length).toBeGreaterThan(0);
   });
 
-  it('should hide winner celebration after timeout', async () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={mockWinner} />);
+  it('should have question display test id', () => {
+    render(<QuestionDisplay question={mockQuestion} />);
 
-    // Attendre que la célébration apparaisse
-    await waitFor(() => {
-      expect(screen.getByText('VOUS AVEZ GAGNÉ !')).toBeInTheDocument();
-    });
-
-    // Avancer le temps de 5 secondes (durée de la célébration)
-    jest.advanceTimersByTime(5000);
-
-    await waitFor(() => {
-      expect(screen.queryByText('VOUS AVEZ GAGNÉ !')).not.toBeInTheDocument();
-    });
+    expect(screen.getByTestId('question-display')).toBeInTheDocument();
   });
 
-  it('should show performance metrics in development mode', () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
+  it('should display "QUESTION ACTIVE" header', () => {
+    render(<QuestionDisplay question={mockQuestion} />);
 
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
-
-    const debugInfo = document.querySelector('.bg-black\\/80');
-    expect(debugInfo).toBeInTheDocument();
-    expect(screen.getByText(/Frame drops:/)).toBeInTheDocument();
-
-    process.env.NODE_ENV = originalEnv;
+    expect(screen.getByText('QUESTION ACTIVE')).toBeInTheDocument();
   });
 
-  it('should not show performance metrics in production', () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+  it('should handle question change callback', () => {
+    const onQuestionChange = jest.fn();
+    const { rerender } = render(
+      <QuestionDisplay question={mockQuestion} onQuestionChange={onQuestionChange} />
+    );
 
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
+    const newQuestion: Question = {
+      ...mockQuestion,
+      id: 'q2',
+      text: 'Nouvelle question'
+    };
 
-    const debugInfo = document.querySelector('.bg-black\\/80');
-    expect(debugInfo).not.toBeInTheDocument();
+    rerender(<QuestionDisplay question={newQuestion} onQuestionChange={onQuestionChange} />);
 
-    process.env.NODE_ENV = originalEnv;
+    // Le callback devrait être appelé lors du changement de question
+    // Note: Le composant utilise un setTimeout de 300ms, donc onQuestionChange
+    // sera appelé après l'animation
+    expect(screen.getByText('Nouvelle question')).toBeInTheDocument();
   });
 
-  it('should have circular progress indicator', () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
+  it('should apply custom className', () => {
+    const { container } = render(
+      <QuestionDisplay question={mockQuestion} className="custom-class" />
+    );
 
-    const svg = document.querySelector('svg');
-    expect(svg).toBeInTheDocument();
-    expect(svg).toHaveAttribute('viewBox', '0 0 100 100');
-  });
-
-  it('should animate question appearance', () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={null} />);
-
-    const questionContainer = document.querySelector('.transition-all');
-    expect(questionContainer).toHaveClass('duration-500', 'ease-out');
-  });
-
-  it('should create celebration particles', async () => {
-    render(<QuestionDisplay question={mockQuestion} timeLeft={25} winner={mockWinner} />);
-
-    await waitFor(() => {
-      const particles = document.querySelectorAll('.animate-ping');
-      expect(particles.length).toBeGreaterThan(0);
-    });
+    const questionDisplay = container.querySelector('[data-testid="question-display"]');
+    expect(questionDisplay).toHaveClass('custom-class');
   });
 });

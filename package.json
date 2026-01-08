@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:p0": "playwright test --grep '@P0'",
     "test:e2e:p1": "playwright test --grep '@P0|@P1'",
-    "test:component": "playwright test tests/component",
+    "test:component": "playwright test -c playwright-ct.config.ts",
     "test:coverage": "jest --coverage",
     "bundle:check": "node scripts/check-overlay-bundle-size.js",
     "obs:test": "node scripts/obs-integration-test.js",
@@ -31,6 +31,8 @@
     "zustand": "^4.4.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.2.0",
+    "@playwright/experimental-ct-react": "^1.57.0",
     "@playwright/test": "^1.40.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",

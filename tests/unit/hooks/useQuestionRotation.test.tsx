@@ -214,17 +214,23 @@ describe('useQuestionRotation', () => {
     expect(typeof result.current.isExpired).toBe('boolean');
   });
 
-  it('[P2] devrait exposer la question courante', () => {
+  it('[P2] devrait exposer la question courante', async () => {
     // GIVEN: Hook initialisé
     const { result } = renderHook(() => useQuestionRotation());
 
-    // THEN: currentQuestion devrait être accessible
-    expect(result.current.currentQuestion).toBeDefined();
-    // La question peut être null ou un objet Question
-    if (result.current.currentQuestion) {
+    // Attendre que le hook soit complètement initialisé avec currentQuestion défini
+    // Selon le mock useCurrentQuestion, currentQuestion devrait être mockQuestion
+    await waitFor(() => {
+      expect(result.current.currentQuestion).toBeDefined();
+      expect(result.current.currentQuestion).not.toBeNull();
       expect(result.current.currentQuestion).toHaveProperty('id');
       expect(result.current.currentQuestion).toHaveProperty('text');
-    }
+    }, { timeout: 2000 });
+
+    // THEN: currentQuestion devrait être accessible avec toutes ses propriétés
+    // Assertions explicites sans conditional - le mock garantit que currentQuestion est défini
+    expect(result.current.currentQuestion).toHaveProperty('id');
+    expect(result.current.currentQuestion).toHaveProperty('text');
   });
 
   it('[P2] devrait gérer les erreurs de chargement', () => {

@@ -3,6 +3,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { TEST_TIMEOUTS } from '../support/constants/timeouts';
 
 test.describe('Overlay OBS Integration', () => {
   test.beforeEach(async ({ page }) => {
@@ -59,15 +60,24 @@ test.describe('Overlay OBS Integration', () => {
     const startTime = Date.now();
 
     // Déclencher une animation
-    await page.evaluate(() => {
+    const elementHandle = await page.evaluateHandle(() => {
       const element = document.createElement('div');
       element.className = 'gpu-accelerated animate-pulse';
       element.style.cssText = 'position: absolute; width: 100px; height: 100px; background: red;';
       document.body.appendChild(element);
-
-      // Cleanup après test
-      setTimeout(() => element.remove(), 1000);
+      return element;
     });
+
+    // Attendre explicitement que l'animation soit visible
+    await expect(page.locator('.gpu-accelerated.animate-pulse')).toBeVisible({ timeout: TEST_TIMEOUTS.ANIMATION });
+
+    // Cleanup après test - attendre explicitement que l'élément soit supprimé
+    await page.evaluate((element) => {
+      element.remove();
+    }, elementHandle);
+    
+    // Attendre que l'élément soit effectivement supprimé
+    await expect(page.locator('.gpu-accelerated.animate-pulse')).not.toBeVisible({ timeout: TEST_TIMEOUTS.ANIMATION });
 
     const endTime = Date.now();
     const animationTime = endTime - startTime;
@@ -129,7 +139,15 @@ test.describe('Overlay OBS Integration', () => {
       requestAnimationFrame(measureFrame);
 
       return new Promise(resolve => {
-        setTimeout(() => resolve(metrics), 200);
+        // Attendre explicitement que toutes les frames soient mesurées
+        const checkComplete = () => {
+          if (frameCount >= 10 && metrics.averageFrameTime > 0) {
+            resolve(metrics);
+          } else {
+            requestAnimationFrame(checkComplete);
+          }
+        };
+        checkComplete();
       });
     });
 

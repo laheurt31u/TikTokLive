@@ -6,6 +6,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForElement } from '../support/helpers/wait-for';
 import { assertDegradedModeActive, assertWebSocketConnected } from '../support/helpers/assertions';
+import { TEST_TIMEOUTS } from '../support/constants/timeouts';
 
 test.describe('Reconnexion Automatique', () => {
   test('[P0] devrait se reconnecter automatiquement après une déconnexion temporaire', async ({ page }) => {
@@ -30,7 +31,7 @@ test.describe('Reconnexion Automatique', () => {
 
     // AND: Après reconnexion réussie, l'état revient à connecté
     await page.route('**/tiktok.com/**', route => route.fulfill({ status: 200, body: '{}' }));
-    await expect(page.locator('[data-testid="connection-status-connected"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-testid="connection-status-connected"]')).toBeVisible({ timeout: TEST_TIMEOUTS.RECONNECTION });
   });
 
   test('[P0] devrait activer le Circuit Breaker après plusieurs échecs de reconnexion', async ({ page }) => {
@@ -47,12 +48,14 @@ test.describe('Reconnexion Automatique', () => {
       await page.click('[data-testid="simulate-disconnect"]');
       await expect(page.locator('[data-testid="connection-status-disconnected"]')).toBeVisible();
 
-      // Attendre que la reconnexion échoue
-      await page.waitForTimeout(2000);
+      // Attendre que la reconnexion échoue - attente explicite de l'état
+      await expect(page.locator('[data-testid="reconnection-attempt"]')).toBeVisible({ timeout: TEST_TIMEOUTS.ELEMENT_VISIBILITY });
+      // Attendre que la tentative échoue avant de continuer
+      await expect(page.locator('[data-testid="connection-status-disconnected"]')).toBeVisible({ timeout: TEST_TIMEOUTS.ELEMENT_VISIBILITY });
     }
 
-    // THEN: Le Circuit Breaker s'active
-    await expect(page.locator('[data-testid="circuit-breaker-open"]')).toBeVisible();
+    // THEN: Le Circuit Breaker s'active - attente explicite de l'état
+    await expect(page.locator('[data-testid="circuit-breaker-open"]')).toBeVisible({ timeout: TEST_TIMEOUTS.CIRCUIT_BREAKER });
 
     // AND: Les tentatives de reconnexion sont stoppées temporairement
     await expect(page.locator('[data-testid="reconnection-paused"]')).toBeVisible();
@@ -150,11 +153,13 @@ test.describe('Reconnexion Automatique', () => {
     for (let i = 0; i < 3; i++) {
       await page.route('**/tiktok.com/**', route => route.abort());
       await page.click('[data-testid="simulate-disconnect"]');
-      await page.waitForTimeout(1000);
+      // Attendre explicitement l'état déconnecté
+      await expect(page.locator('[data-testid="connection-status-disconnected"]')).toBeVisible({ timeout: TEST_TIMEOUTS.ELEMENT_VISIBILITY });
 
       await page.route('**/tiktok.com/**', route => route.fulfill({ status: 200, body: '{}' }));
       await page.click('[data-testid="simulate-reconnect"]');
-      await page.waitForTimeout(1000);
+      // Attendre explicitement l'état reconnecté
+      await expect(page.locator('[data-testid="connection-status-connected"]')).toBeVisible({ timeout: TEST_TIMEOUTS.RECONNECTION });
     }
 
     // WHEN: L'utilisateur consulte les métriques
