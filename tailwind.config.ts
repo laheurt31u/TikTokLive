@@ -37,6 +37,7 @@ const config: Config = {
         'rotate-cw': 'rotate-cw 1s ease-in-out',
         'shake-intense': 'shake-intense 0.5s ease-in-out infinite',
         'wiggle': 'wiggle 2s ease-in-out infinite',
+        'fade-in-slide-up': 'fade-in-slide-up 0.6s ease-out',
       },
       keyframes: {
         glitch: {
@@ -140,6 +141,16 @@ const config: Config = {
           '0%, 100%': { transform: 'rotate(0deg)' },
           '25%': { transform: 'rotate(5deg)' },
           '75%': { transform: 'rotate(-5deg)' },
+        },
+        'fade-in-slide-up': {
+          '0%': {
+            transform: 'translateY(20px)',
+            opacity: '0',
+          },
+          '100%': {
+            transform: 'translateY(0)',
+            opacity: '1',
+          },
         },
       },
     },
