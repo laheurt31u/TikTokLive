@@ -1,0 +1,160 @@
+<testsuites id="" name="" tests="13" failures="3" skipped="0" errors="0" time="18.222386">
+<testsuite name="performance-load.spec.ts" timestamp="2026-01-07T18:32:09.232Z" hostname="chromium" tests="11" failures="1" skipped="0" time="3.224" errors="0">
+<testcase name="TikTok API Performance and Load Testing › API Connection Performance › [P2] should handle rapid API connection attempts" classname="performance-load.spec.ts" time="0.179">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Connection Performance › [P2] should validate connection parameters correctly" classname="performance-load.spec.ts" time="0.269">
+<failure message="performance-load.spec.ts:29:9 [P2] should validate connection parameters correctly" type="FAILURE">
+<![CDATA[  [chromium] › performance-load.spec.ts:29:9 › TikTok API Performance and Load Testing › API Connection Performance › [P2] should validate connection parameters correctly 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "sessionId requis"
+    Received string:    "Données de connexion invalides"
+
+      70 |           const body = await response.json();
+      71 |           expect(body.success).toBe(false);
+    > 72 |           expect(body.error.message).toContain(testCase.expectedError);
+         |                                      ^
+      73 |         } else {
+      74 |           const body = await response.json();
+      75 |           expect(body.success).toBe(true);
+        at /home/octozu/Projets/TikTokLive/tiktoklive/tests/e2e/performance-load.spec.ts:72:38
+
+    attachment #1: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../test-results/performance-load-TikTok-AP-03b37-ection-parameters-correctly-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../test-results/performance-load-TikTok-AP-03b37-ection-parameters-correctly-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|performance-load-TikTok-AP-03b37-ection-parameters-correctly-chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Status Performance › [P2] should handle high-frequency status requests" classname="performance-load.spec.ts" time="0.165">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Status Performance › [P2] should return consistent status information" classname="performance-load.spec.ts" time="0.497">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Error Handling › [P2] should handle malformed JSON gracefully" classname="performance-load.spec.ts" time="0.137">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Error Handling › [P2] should handle oversized payloads" classname="performance-load.spec.ts" time="0.121">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Error Handling › [P2] should handle concurrent requests without race conditions" classname="performance-load.spec.ts" time="0.442">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Resource Management › [P2] should handle connection lifecycle properly" classname="performance-load.spec.ts" time="0.315">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Resource Management › [P2] should prevent resource leaks under load" classname="performance-load.spec.ts" time="0.681">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Response Times › [P2] should respond within acceptable time limits" classname="performance-load.spec.ts" time="0.167">
+</testcase>
+<testcase name="TikTok API Performance and Load Testing › API Response Times › [P2] should maintain consistent response times under load" classname="performance-load.spec.ts" time="0.251">
+</testcase>
+</testsuite>
+<testsuite name="tiktok-connection.spec.ts" timestamp="2026-01-07T18:32:09.232Z" hostname="chromium" tests="1" failures="1" skipped="0" time="16.599" errors="0">
+<testcase name="TikTok Live Connection › [P2] should display connection logs" classname="tiktok-connection.spec.ts" time="16.599">
+<failure message="tiktok-connection.spec.ts:80:7 [P2] should display connection logs" type="FAILURE">
+<![CDATA[  [chromium] › tiktok-connection.spec.ts:80:7 › TikTok Live Connection › [P2] should display connection logs 
+
+    TimeoutError: page.fill: Timeout 15000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="room-id-input"]')
+
+
+      81 |     // GIVEN: Connected to a room
+      82 |     await page.goto('/');
+    > 83 |     await page.fill('[data-testid="room-id-input"]', tiktokRoom.id);
+         |                ^
+      84 |     await page.click('[data-testid="connect-button"]');
+      85 |
+      86 |     // WHEN: Connection events occur
+        at /home/octozu/Projets/TikTokLive/tiktoklive/tests/e2e/tiktok-connection.spec.ts:83:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../test-results/tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../test-results/tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[Cleaning up test room: 7f87c374-4e1b-4535-a076-83e8f820ddfe
+
+[[ATTACHMENT|tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/video.webm]]
+
+[[ATTACHMENT|tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/error-context.md]]
+
+[[ATTACHMENT|tiktok-connection-TikTok-L-1f590-uld-display-connection-logs-chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="tiktok-live-connection.spec.ts" timestamp="2026-01-07T18:32:09.232Z" hostname="chromium" tests="1" failures="1" skipped="0" time="16.506" errors="0">
+<testcase name="TikTok Live Connection - End-to-End › [P2] should display real-time connection metrics and logs" classname="tiktok-live-connection.spec.ts" time="16.506">
+<failure message="tiktok-live-connection.spec.ts:176:7 [P2] should display real-time connection metrics and logs" type="FAILURE">
+<![CDATA[  [chromium] › tiktok-live-connection.spec.ts:176:7 › TikTok Live Connection - End-to-End › [P2] should display real-time connection metrics and logs 
+
+    TimeoutError: page.fill: Timeout 15000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="session-id-input"]')
+
+
+      177 |     // GIVEN: Connected to TikTok Live
+      178 |     await page.goto('/');
+    > 179 |     await page.fill('[data-testid="session-id-input"]', 'test_session_12345');
+          |                ^
+      180 |     await page.fill('[data-testid="cookies-input"]', 'sessionid=abc123; user_id=12345');
+      181 |     await page.click('[data-testid="connect-button"]');
+      182 |
+        at /home/octozu/Projets/TikTokLive/tiktoklive/tests/e2e/tiktok-live-connection.spec.ts:179:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../test-results/tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../test-results/tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/video.webm]]
+
+[[ATTACHMENT|tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/error-context.md]]
+
+[[ATTACHMENT|tiktok-live-connection-Tik-95255-connection-metrics-and-logs-chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>

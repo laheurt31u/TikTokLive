@@ -1,29 +1,49 @@
 {
-  "name": "tiktok-live-quiz",
+  "name": "tiktoklive",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:unit": "jest --testPathPattern=tests/unit",
+    "test:e2e": "playwright test",
+    "test:e2e:p0": "playwright test --grep '@P0'",
+    "test:e2e:p1": "playwright test --grep '@P0|@P1'",
+    "test:component": "playwright test tests/component",
+    "test:coverage": "jest --coverage",
+    "bundle:check": "node scripts/check-overlay-bundle-size.js",
+    "obs:test": "node scripts/obs-integration-test.js",
+    "validate": "npm run lint && npm run test:unit && npm run bundle:check"
   },
   "dependencies": {
-    "next": "16.1.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "@types/uuid": "^10.0.0",
+    "next": "14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io-client": "^4.7.0",
+    "swr": "^2.2.0",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.5",
+    "zustand": "^4.4.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.1",
-    "prettier": "^3.7.4",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@playwright/test": "^1.40.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^14.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "14.0.0",
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0",
+    "postcss": "^8.0.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.0.0"
   }
 }

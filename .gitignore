@@ -1,41 +1,108 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
+# Dependencies
+node_modules/
 /.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+.pnp.js
 
-# testing
+# Testing
 /coverage
+/.nyc_output
+*.lcov
+.playwright/
 
-# next.js
+# Next.js
 /.next/
 /out/
+next-env.d.ts
 
-# production
+# Production
 /build
+/dist
 
-# misc
+# Misc
 .DS_Store
 *.pem
+*.log
+*.lock
 
-# debug
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Local env files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# vercel
+# Vercel
 .vercel
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (pour tiktoklive/)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+# lib/ et lib64/ uniquement dans les environnements Python virtuels
+env/lib/
+venv/lib/
+ENV/lib/
+env/lib64/
+venv/lib64/
+ENV/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# BMAD Output (artefacts générés)
+_bmad-output/
+
+# Archive (ancien code)
+Archive/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
