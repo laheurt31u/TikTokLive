@@ -178,6 +178,33 @@ describe('Questions Service', () => {
       expect(fs.readFile).toHaveBeenCalledTimes(1);
     });
 
+    it('[P2] should invalidate cache when TTL expires (after 1 hour)', async () => {
+      const mockFileContent = JSON.stringify({ questions: mockValidQuestions });
+      (fs.readFile as jest.Mock).mockResolvedValue(mockFileContent);
+
+      // GIVEN: Questions chargées et mises en cache
+      const result1 = await loadQuestionsFromFile(mockQuestionsPath);
+      expect(result1.success).toBe(true);
+      expect(fs.readFile).toHaveBeenCalledTimes(1);
+
+      // WHEN: Simulant le passage du temps (TTL = 3600 * 1000ms = 1 heure)
+      // Mock Date.now pour simuler 1 heure + 1ms plus tard
+      const originalNow = Date.now;
+      const mockNow = jest.fn(() => originalNow() + 3600 * 1000 + 1);
+      global.Date.now = mockNow;
+
+      // Clear mock call count
+      (fs.readFile as jest.Mock).mockClear();
+
+      // THEN: Le cache est expiré, le fichier est relu
+      const result2 = await loadQuestionsFromFile(mockQuestionsPath);
+      expect(result2.success).toBe(true);
+      expect(fs.readFile).toHaveBeenCalledTimes(1); // Fichier relu car cache expiré
+
+      // Restore Date.now
+      global.Date.now = originalNow;
+    });
+
     it('should return error for invalid file path', async () => {
       process.env.QUESTIONS_FALLBACK_ENABLED = 'false';
       // Test avec un chemin explicitement invalide (null ou undefined via env)

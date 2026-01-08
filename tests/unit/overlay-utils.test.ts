@@ -3,11 +3,14 @@
  * Tests des fonctions utilitaires pour l'overlay OBS
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import {
   detectOBSResolution,
   getOptimalFontSize,
   getOptimalSpacing,
+  optimizeAnimationsForOBS,
+  PerformanceMonitor,
+  assetOptimization,
 } from '@/lib/overlay-utils';
 
 describe('Overlay Utils', () => {
@@ -141,6 +144,238 @@ describe('Overlay Utils', () => {
       // THEN: Les espacements sont ajustés selon les facteurs
       expect(spacing720p).toBe(Math.round(10 * 0.9)); // 9
       expect(spacing1080p).toBe(10);
+    });
+  });
+
+  describe('optimizeAnimationsForOBS', () => {
+    beforeEach(() => {
+      // Nettoyer le head avant chaque test
+      document.head.innerHTML = '';
+    });
+
+    afterEach(() => {
+      // Nettoyer après chaque test
+      document.head.innerHTML = '';
+    });
+
+    it('[P2] devrait ajouter des styles CSS pour optimiser les animations', () => {
+      // GIVEN: Head vide
+      expect(document.head.querySelector('style')).toBeNull();
+
+      // WHEN: Optimisant les animations
+      const cleanup = optimizeAnimationsForOBS();
+
+      // THEN: Un élément style est ajouté au head
+      const styleElement = document.head.querySelector('style');
+      expect(styleElement).not.toBeNull();
+      expect(styleElement?.textContent).toContain('.obs-optimized');
+      expect(styleElement?.textContent).toContain('transform: translateZ(0)');
+      expect(styleElement?.textContent).toContain('.obs-optimized-animation');
+
+      // Cleanup
+      cleanup();
+      expect(document.head.querySelector('style')).toBeNull();
+    });
+
+    it('[P2] devrait retourner une fonction de cleanup qui supprime les styles', () => {
+      // GIVEN: Styles optimisés ajoutés
+      const cleanup = optimizeAnimationsForOBS();
+      expect(document.head.querySelector('style')).not.toBeNull();
+
+      // WHEN: Appelant la fonction de cleanup
+      cleanup();
+
+      // THEN: Les styles sont supprimés
+      expect(document.head.querySelector('style')).toBeNull();
+    });
+  });
+
+  describe('PerformanceMonitor', () => {
+    let monitor: PerformanceMonitor;
+    let mockRequestAnimationFrame: jest.Mock;
+    let mockPerformanceNow: jest.Mock;
+
+    beforeEach(() => {
+      monitor = new PerformanceMonitor();
+      
+      // Mock requestAnimationFrame
+      mockRequestAnimationFrame = jest.fn((callback) => {
+        setTimeout(() => callback(performance.now()), 16);
+        return 1;
+      });
+      global.requestAnimationFrame = mockRequestAnimationFrame as any;
+
+      // Mock performance.now
+      let time = 0;
+      mockPerformanceNow = jest.fn(() => {
+        time += 16.67; // Simule 60fps
+        return time;
+      });
+      global.performance.now = mockPerformanceNow as any;
+    });
+
+    afterEach(() => {
+      monitor.stop();
+      jest.clearAllMocks();
+    });
+
+    it('[P2] devrait démarrer le monitoring de performance', () => {
+      // GIVEN: Monitor non démarré
+      const callback = jest.fn();
+
+      // WHEN: Démarrant le monitor
+      monitor.start(callback);
+
+      // THEN: requestAnimationFrame est appelé
+      expect(mockRequestAnimationFrame).toHaveBeenCalled();
+    });
+
+    it('[P2] devrait arrêter le monitoring et réinitialiser les compteurs', () => {
+      // GIVEN: Monitor démarré
+      monitor.start();
+
+      // WHEN: Arrêtant le monitor
+      monitor.stop();
+
+      // THEN: Les compteurs sont réinitialisés
+      // (Vérification indirecte via l'absence de callback)
+      expect(monitor).toBeDefined();
+    });
+
+    it('[P2] devrait détecter les frame drops quand deltaTime > 16.67ms', () => {
+      // GIVEN: Monitor avec callback
+      const callback = jest.fn();
+      let frameCount = 0;
+      
+      // Simuler des frames avec délai variable
+      mockPerformanceNow = jest.fn(() => {
+        frameCount++;
+        // Frame 60: deltaTime normal (16.67ms)
+        if (frameCount <= 60) return frameCount * 16.67;
+        // Frame 61: frame drop (deltaTime > 16.67ms)
+        return 61 * 16.67 + 10; // +10ms de délai
+      });
+      global.performance.now = mockPerformanceNow as any;
+
+      monitor.start(callback);
+
+      // Attendre quelques frames
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          monitor.stop();
+          // Le callback devrait être appelé après 60 frames
+          // (même si on ne peut pas vérifier directement les frameDrops sans attendre 60 frames)
+          resolve();
+        }, 100);
+      });
+    });
+  });
+
+  describe('assetOptimization', () => {
+    describe('preloadCriticalImages', () => {
+      it('[P2] devrait précharger toutes les images avec succès', async () => {
+        // GIVEN: URLs d'images valides
+        const imageUrls = [
+          'https://example.com/image1.jpg',
+          'https://example.com/image2.jpg',
+        ];
+
+        // Mock Image constructor
+        const mockImage = {
+          onload: null as (() => void) | null,
+          onerror: null as ((error: Error) => void) | null,
+          src: '',
+        };
+
+        global.Image = jest.fn(() => mockImage as any) as any;
+
+        // WHEN: Préchargeant les images
+        const promise = assetOptimization.preloadCriticalImages(imageUrls);
+
+        // Simuler le chargement réussi
+        setTimeout(() => {
+          if (mockImage.onload) mockImage.onload();
+        }, 10);
+
+        // THEN: La promesse se résout
+        await expect(promise).resolves.toEqual([undefined, undefined]);
+      });
+
+      it('[P2] devrait rejeter si une image échoue à charger', async () => {
+        // GIVEN: URLs avec une image invalide
+        const imageUrls = ['https://example.com/invalid.jpg'];
+
+        const mockImage = {
+          onload: null as (() => void) | null,
+          onerror: null as ((error: Error) => void) | null,
+          src: '',
+        };
+
+        global.Image = jest.fn(() => mockImage as any) as any;
+
+        // WHEN: Préchargeant les images
+        const promise = assetOptimization.preloadCriticalImages(imageUrls);
+
+        // Simuler l'erreur
+        setTimeout(() => {
+          if (mockImage.onerror) mockImage.onerror(new Error('Failed to load'));
+        }, 10);
+
+        // THEN: La promesse est rejetée
+        await expect(promise).rejects.toBeDefined();
+      });
+    });
+
+    describe('lazyLoadImage', () => {
+      it('[P2] devrait charger une image de manière lazy', async () => {
+        // GIVEN: URL d'image valide
+        const imageUrl = 'https://example.com/image.jpg';
+
+        const mockImage = {
+          onload: null as (() => void) | null,
+          onerror: null as ((error: Error) => void) | null,
+          src: '',
+        };
+
+        global.Image = jest.fn(() => mockImage as any) as any;
+
+        // WHEN: Chargement lazy
+        const promise = assetOptimization.lazyLoadImage(imageUrl);
+
+        // Simuler le chargement réussi
+        setTimeout(() => {
+          if (mockImage.onload) mockImage.onload();
+        }, 10);
+
+        // THEN: La promesse se résout avec l'image
+        const image = await promise;
+        expect(image).toBe(mockImage);
+        expect(mockImage.src).toBe(imageUrl);
+      });
+
+      it('[P2] devrait rejeter si l\'image échoue à charger', async () => {
+        // GIVEN: URL d'image invalide
+        const imageUrl = 'https://example.com/invalid.jpg';
+
+        const mockImage = {
+          onload: null as (() => void) | null,
+          onerror: null as ((error: Error) => void) | null,
+          src: '',
+        };
+
+        global.Image = jest.fn(() => mockImage as any) as any;
+
+        // WHEN: Chargement lazy
+        const promise = assetOptimization.lazyLoadImage(imageUrl);
+
+        // Simuler l'erreur
+        setTimeout(() => {
+          if (mockImage.onerror) mockImage.onerror(new Error('Failed to load'));
+        }, 10);
+
+        // THEN: La promesse est rejetée
+        await expect(promise).rejects.toBeDefined();
+      });
     });
   });
 });

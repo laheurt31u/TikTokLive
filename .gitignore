@@ -94,7 +94,7 @@ htmlcov/
 .hypothesis/
 
 # BMAD Output (artefacts générés)
-_bmad-output/
+# _bmad-output/  # Maintenant versionné sur GitHub
 
 # Archive (ancien code)
 Archive/

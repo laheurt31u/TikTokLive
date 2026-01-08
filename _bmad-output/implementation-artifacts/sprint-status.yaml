@@ -58,7 +58,7 @@ development_status:
   2-1-stockage-et-chargement-des-questions: done
   2-2-affichage-automatique-des-questions: done
   2-3-rotation-automatique-des-questions: done
-  2-4-parsing-des-commentaires-du-chat: backlog
+  2-4-parsing-des-commentaires-du-chat: done
   2-5-validation-des-reponses: backlog
   2-6-identification-du-premier-gagnant: backlog
   2-7-rate-limiting-des-reponses: backlog
