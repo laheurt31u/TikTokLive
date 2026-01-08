@@ -1,6 +1,11 @@
 const { configure } = require('@testing-library/react');
 require('@testing-library/jest-dom');
 
+// Mock uuid pour éviter les problèmes de transformation ESM
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'mock-uuid-v4-' + Math.random().toString(36).substr(2, 9)),
+}));
+
 // Mock pour les APIs WebSocket
 global.WebSocket = jest.fn().mockImplementation(() => ({
   addEventListener: jest.fn(),

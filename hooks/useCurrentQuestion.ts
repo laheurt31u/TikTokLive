@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Question } from '@/types/gamification';
 import { useWebSocket } from './useWebSocket';
 import { CorrelationManager } from '@/lib/logger/correlation';
+import { getNextQuestionIndex } from '@/lib/gamification/question-rotation';
 
 interface UseCurrentQuestionReturn {
   currentQuestion: Question | null;
@@ -41,11 +42,15 @@ export function useCurrentQuestion(): UseCurrentQuestionReturn {
   const previousQuestionIdRef = useRef<string | null>(null);
 
   /**
-   * Charge les questions depuis l'API
+   * Charge les questions depuis l'API avec retry automatique et backoff exponentiel
+   * @param retryCount Nombre de tentatives déjà effectuées
+   * @param maxRetries Nombre maximum de tentatives (défaut: 3)
    */
-  const loadQuestions = useCallback(async () => {
+  const loadQuestions = useCallback(async (retryCount: number = 0, maxRetries: number = 3) => {
     setIsLoading(true);
     setError(null);
+
+    const correlationId = CorrelationManager.getCurrentContext()?.id || CorrelationManager.generateId();
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_QUESTIONS_API_URL || '/api/questions';
@@ -76,16 +81,40 @@ export function useCurrentQuestion(): UseCurrentQuestionReturn {
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur inconnue lors du chargement');
+      
+      // Retry automatique avec backoff exponentiel
+      if (retryCount < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 10000); // Max 10 secondes
+        
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[useCurrentQuestion] Erreur de chargement, retry automatique:', {
+            message: error.message,
+            retryCount: retryCount + 1,
+            maxRetries,
+            delayMs: delay,
+            correlationId
+          });
+        }
+
+        // Attendre avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Réessayer avec incrément du compteur
+        return loadQuestions(retryCount + 1, maxRetries);
+      }
+
+      // Toutes les tentatives ont échoué
       setError(error);
       setCurrentQuestion(null);
       setAllQuestions([]);
       
-      // Logger l'erreur avec correlation ID pour debugging
-      const correlationId = CorrelationManager.getCurrentContext()?.id || CorrelationManager.generateId();
+      // Logger l'erreur finale avec correlation ID pour debugging
       if (typeof console !== 'undefined' && console.error) {
-        console.error('[useCurrentQuestion] Erreur de chargement:', {
+        console.error('[useCurrentQuestion] Erreur de chargement après toutes les tentatives:', {
           message: error.message,
           stack: error.stack,
+          retryCount,
+          maxRetries,
           correlationId
         });
       }
@@ -110,7 +139,8 @@ export function useCurrentQuestion(): UseCurrentQuestionReturn {
       return;
     }
 
-    const nextIndex = (currentIndex + 1) % allQuestions.length;
+    // Utiliser le service de rotation pour cohérence et gestion d'erreurs
+    const nextIndex = getNextQuestionIndex(currentIndex, allQuestions.length);
     setCurrentIndex(nextIndex);
     setCurrentQuestion(allQuestions[nextIndex]);
   }, [allQuestions, currentIndex]);
@@ -133,21 +163,25 @@ export function useCurrentQuestion(): UseCurrentQuestionReturn {
     const handleWebSocketMessage = (event: CustomEvent) => {
       const data = event.detail;
 
-      // Support des deux formats WebSocket : question:new (nouveau) et quiz:question (legacy)
-      const isQuestionEvent = data.type === 'question:new' || data.type === 'quiz:question';
+      // Support des formats WebSocket : question:new, question:next, et quiz:question (legacy)
+      const isQuestionEvent = data.type === 'question:new' || data.type === 'question:next' || data.type === 'quiz:question';
       
       if (isQuestionEvent) {
         try {
           // Normaliser les deux formats d'événements
           let questionPayload: Question;
           
-          if (data.type === 'question:new') {
-            // Format nouveau : { type: 'question:new', payload: Question, ... }
+          if (data.type === 'question:new' || data.type === 'question:next') {
+            // Format nouveau : { type: 'question:new'|'question:next', payload: Question, ... }
             if (!data.payload || typeof data.payload !== 'object') {
-              throw new Error('Invalid question:new event: missing or invalid payload');
+              throw new Error(`Invalid ${data.type} event: missing or invalid payload`);
             }
-            const questionEvent = data as QuestionNewEvent;
-            questionPayload = questionEvent.payload;
+            // question:next peut avoir payload.question ou payload directement
+            const payload = data.payload.question || data.payload;
+            if (!payload || typeof payload !== 'object') {
+              throw new Error(`Invalid ${data.type} event: missing question in payload`);
+            }
+            questionPayload = payload as Question;
           } else if (data.type === 'quiz:question') {
             // Format legacy : { type: 'quiz:question', question: string, questionId: string, ... }
             // Adapter le format legacy vers le format Question
@@ -240,7 +274,8 @@ export function useCurrentQuestion(): UseCurrentQuestionReturn {
       
       // Transition automatique vers question suivante
       if (allQuestions.length > 0) {
-        const nextIndex = (currentIndex + 1) % allQuestions.length;
+        // Utiliser le service de rotation pour cohérence
+        const nextIndex = getNextQuestionIndex(currentIndex, allQuestions.length);
         setCurrentIndex(nextIndex);
         setCurrentQuestion(allQuestions[nextIndex]);
       }
@@ -257,18 +292,20 @@ export function useCurrentQuestion(): UseCurrentQuestionReturn {
       
       // Transition automatique vers question suivante
       if (allQuestions.length > 0) {
-        const nextIndex = (currentIndex + 1) % allQuestions.length;
+        // Utiliser le service de rotation pour cohérence
+        const nextIndex = getNextQuestionIndex(currentIndex, allQuestions.length);
         setCurrentIndex(nextIndex);
         setCurrentQuestion(allQuestions[nextIndex]);
       }
     };
 
     // Écouter les événements d'expiration et de résolution
-    window.addEventListener('question-expired', handleQuestionExpired as EventListener);
+    // Note: question:expired est émis par useQuestionTimer avec deux-points
+    window.addEventListener('question:expired', handleQuestionExpired as EventListener);
     window.addEventListener('question:resolved', handleQuestionResolved as EventListener);
 
     return () => {
-      window.removeEventListener('question-expired', handleQuestionExpired as EventListener);
+      window.removeEventListener('question:expired', handleQuestionExpired as EventListener);
       window.removeEventListener('question:resolved', handleQuestionResolved as EventListener);
     };
   }, [allQuestions, currentIndex, currentQuestion]);

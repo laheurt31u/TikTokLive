@@ -22,6 +22,7 @@ tests/
 │   └── reconnection-resilience.spec.ts
 ├── api/                          # Tests d'API
 │   ├── questions.api.spec.ts         # Tests API questions
+│   ├── tiktok.api.spec.ts            # Tests API TikTok (connect, status, disconnect) [P0-P1]
 │   ├── points-leaderboard.api.spec.ts
 │   └── user-management.api.spec.ts
 ├── component/                    # Tests de composants React
@@ -31,6 +32,9 @@ tests/
 ├── unit/                         # Tests unitaires
 │   ├── overlay-utils.test.ts         # Utilitaires overlay (P2)
 │   ├── gamification/
+│   │   └── question-rotation.test.ts  # Service rotation questions (P1)
+│   ├── logger/
+│   │   └── correlation-manager.test.ts # Gestionnaire correlation IDs (P2)
 │   └── overlay/
 └── support/                      # Infrastructure de test
     ├── fixtures/                      # Fixtures Playwright

@@ -87,10 +87,11 @@ test.describe('Parcours Complet Quiz', () => {
     // WHEN: Le timer expire (simuler expiration après timeout)
     // Simuler l'expiration du timer
     await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('question-expired', {
+      window.dispatchEvent(new CustomEvent('question:expired', {
         detail: {
+          type: 'question:expired',
           questionId: 'q1',
-          timestamp: Date.now()
+          timestamp: new Date().toISOString()
         }
       }));
     });
