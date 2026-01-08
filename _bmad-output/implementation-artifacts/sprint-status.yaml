@@ -1,0 +1,98 @@
+# generated: 2026-01-07
+# project: TikTokLive
+# project_key: tikTokLive-2026
+# tracking_system: file-system
+# story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-01-07
+project: TikTokLive
+project_key: tikTokLive-2026
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 0: Corrections et Qualité
+  epic-0: done
+  0-1-correction-violations-tests-critiques: done
+  epic-0-retrospective: done
+
+  # Epic 1: Infrastructure de Streaming Connectée
+  epic-1: in-progress
+  1-1-configuration-de-connexion-tiktok: done
+  1-2-ecoute-des-commentaires-temps-reel: done
+  1-3-gestion-des-reconnexions-automatiques: done
+  1-4-interface-overlay-obs-pour-questions: done
+  epic-1-retrospective: done
+
+  # Epic 2: Participation au Quiz
+  epic-2: in-progress
+  2-1-stockage-et-chargement-des-questions: done
+  2-2-affichage-automatique-des-questions: done
+  2-3-rotation-automatique-des-questions: done
+  2-4-parsing-des-commentaires-du-chat: backlog
+  2-5-validation-des-reponses: backlog
+  2-6-identification-du-premier-gagnant: backlog
+  2-7-rate-limiting-des-reponses: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Célébration des Victoires
+  epic-3: backlog
+  3-1-affichage-de-la-photo-de-profil: backlog
+  3-2-message-de-victoire-personnalise: backlog
+  3-3-annonce-vocale-par-text-to-speech: backlog
+  3-4-attribution-automatique-des-points: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Système de Points & Classement
+  epic-4: backlog
+  4-1-persistance-des-scores-en-base-de-donnees: backlog
+  4-2-leaderboard-temps-reel: backlog
+  4-3-reset-hebdomadaire-du-classement: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Expérience Audio-Visuelle Immersive
+  epic-5: backlog
+  5-1-sons-audio-pour-evenements-cles: backlog
+  5-2-effets-visuels-dynamiques: backlog
+  5-3-synchronisation-audio-visuelle-parfaite: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Fondations Techniques pour l'Expérience Temps Réel
+  epic-6: backlog
+  6-1-api-backend-pour-gestion-des-donnees: backlog
+  6-2-base-de-donnees-pour-questions: backlog
+  6-3-cache-pour-leaderboard-temps-reel: backlog
+  6-4-synchronisation-temps-reel-des-evenements: backlog
+  6-5-base-de-donnees-pour-scores: backlog
+  6-6-base-de-donnees-pour-sessions-de-live: backlog
+  6-7-base-de-donnees-pour-utilisateurs: backlog
+  epic-6-retrospective: optional
